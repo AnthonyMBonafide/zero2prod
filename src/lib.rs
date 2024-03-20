@@ -6,9 +6,9 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok().finish()
 }
 
-pub fn run(tcpListener: TcpListener) -> Result<Server, std::io::Error> {
+pub fn run(tcp_listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
-        .bind(tcpListener.local_addr().unwrap())?
+        .listen(tcp_listener)?
         .run();
 
     Ok(server)
