@@ -1,5 +1,7 @@
 use std::net::TcpListener;
 
+use zero2prod::run;
+
 #[tokio::test]
 async fn health_check_works() {
     let address = spawn_app();
@@ -62,7 +64,7 @@ async fn subscribe_returns_400_for_missing_form_data() {
 fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
-    let server = zero2prod::run(listener).expect("Failed to bind address");
+    let server = run(listener).expect("Failed to bind address");
     let _server_run = tokio::spawn(server);
     std::mem::drop(_server_run);
     format!("http://127.0.0.1:{}", port)
