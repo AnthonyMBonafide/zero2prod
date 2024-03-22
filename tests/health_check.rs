@@ -1,6 +1,7 @@
+use sqlx::{Connection, PgConnection, Row};
 use std::net::TcpListener;
 
-use zero2prod::run;
+use zero2prod::{get_configuration, run};
 
 #[tokio::test]
 async fn health_check_works() {
@@ -32,8 +33,22 @@ async fn subscribe_returns_200_for_valid_form_data() {
         .await
         .expect("Failed to execute request");
 
-    assert_eq!(200, response.status().as_u16())
+    assert_eq!(200, response.status().as_u16());
+
+    let config = get_configuration().expect("Failed to get configuration");
+    let mut connection = PgConnection::connect(&config.database.connection_string())
+        .await
+        .expect("Failed to connect to database");
+
+    let r = sqlx::query!("SELECT id, name, email, subscribed_at FROM subscriptions")
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to execute query");
+
+    assert_eq!("le guin", r.name);
+    assert_eq!("le_guin@gmail.com", r.email);
 }
+
 #[tokio::test]
 async fn subscribe_returns_400_for_missing_form_data() {
     let address = spawn_app();

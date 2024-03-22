@@ -1,6 +1,6 @@
-use std::net::TcpListener;
-use actix_web::{dev::Server, web, App, HttpServer};
 use crate::routes::{health_check, subscribe};
+use actix_web::{dev::Server, web, App, HttpServer};
+use std::net::TcpListener;
 
 pub fn run(tcp_listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(|| {

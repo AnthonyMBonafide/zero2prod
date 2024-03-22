@@ -3,7 +3,7 @@
 CREATE TABLE subscriptions(
   id UUID NOT NULL,
   PRIMARY KEY(id),
-  emil TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   subscribed_at TIMESTAMPTZ NOT NULL
 );
