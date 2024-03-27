@@ -79,7 +79,13 @@ async fn subscribe_returns_400_for_missing_form_data() {
 fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
-    let server = run(listener).expect("Failed to bind address");
+    let config = get_configuration().expect("Failed to get configuration");
+    let connection = PgConnection::connect(&config.database.connection_string())
+        .await
+        .expect("Failed to connect to database");
+
+    let server = run(listener, connection).expect("Failed to bind address");
+
     let _server_run = tokio::spawn(server);
     std::mem::drop(_server_run);
     format!("http://127.0.0.1:{}", port)
