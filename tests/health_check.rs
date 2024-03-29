@@ -6,7 +6,7 @@ use zero2prod::{configuration::DatabaseSettings, get_configuration, run};
 
 #[tokio::test]
 async fn health_check_works() {
-    let address = spawn_app().await;
+    let (address, _) = spawn_app().await;
 
     let client = reqwest::Client::new();
 
@@ -22,7 +22,7 @@ async fn health_check_works() {
 
 #[tokio::test]
 async fn subscribe_returns_200_for_valid_form_data() {
-    let address = spawn_app().await;
+    let (address, db_conn_string) = spawn_app().await;
     let client = reqwest::Client::new();
 
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
@@ -36,8 +36,7 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
     assert_eq!(200, response.status().as_u16());
 
-    let config = get_configuration().expect("Failed to get configuration");
-    let mut connection = PgConnection::connect(&config.database.connection_string())
+    let mut connection = PgConnection::connect(&db_conn_string)
         .await
         .expect("Failed to connect to database");
 
@@ -52,7 +51,7 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
 #[tokio::test]
 async fn subscribe_returns_400_for_missing_form_data() {
-    let address = spawn_app().await;
+    let (address, _) = spawn_app().await;
     let client = reqwest::Client::new();
     let test_cases = vec![
         ("name=le%20guin", "missing email"),
@@ -77,7 +76,7 @@ async fn subscribe_returns_400_for_missing_form_data() {
         )
     }
 }
-async fn spawn_app() -> String {
+async fn spawn_app() -> (String, String) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
     let mut config = get_configuration().expect("Failed to get configuration");
@@ -88,7 +87,11 @@ async fn spawn_app() -> String {
 
     let _server_run = tokio::spawn(server);
     std::mem::drop(_server_run);
-    format!("http://127.0.0.1:{}", port)
+
+    (
+        format!("http://127.0.0.1:{}", port),
+        config.database.connection_string(),
+    )
 }
 
 async fn configure_database(config: &DatabaseSettings) -> PgPool {
