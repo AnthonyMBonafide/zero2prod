@@ -1,17 +1,20 @@
+use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
 
-use zero2prod::{configuration::DatabaseSettings, get_configuration, run};
+use zero2prod::{
+    configuration::DatabaseSettings, get_configuration, get_subscriber, init_subscriber, run,
+};
 
 #[tokio::test]
 async fn health_check_works() {
-    let (address, _) = spawn_app().await;
+    let test_app = spawn_app().await;
 
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!("{}/health_check", &address))
+        .get(format!("{}/health_check", &test_app.address))
         .send()
         .await
         .expect("Failed to execute request");
@@ -22,12 +25,12 @@ async fn health_check_works() {
 
 #[tokio::test]
 async fn subscribe_returns_200_for_valid_form_data() {
-    let (address, db_conn_string) = spawn_app().await;
+    let test_app = spawn_app().await;
     let client = reqwest::Client::new();
 
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
     let response = client
-        .post(&format!("{}/subscribe", &address))
+        .post(&format!("{}/subscribe", &test_app.address))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(body)
         .send()
@@ -36,12 +39,8 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
     assert_eq!(200, response.status().as_u16());
 
-    let mut connection = PgConnection::connect(&db_conn_string)
-        .await
-        .expect("Failed to connect to database");
-
     let r = sqlx::query!("SELECT id, name, email, subscribed_at FROM subscriptions")
-        .fetch_one(&mut connection)
+        .fetch_one(&test_app.db_pool)
         .await
         .expect("Failed to execute query");
 
@@ -51,7 +50,7 @@ async fn subscribe_returns_200_for_valid_form_data() {
 
 #[tokio::test]
 async fn subscribe_returns_400_for_missing_form_data() {
-    let (address, _) = spawn_app().await;
+    let test_app = spawn_app().await;
     let client = reqwest::Client::new();
     let test_cases = vec![
         ("name=le%20guin", "missing email"),
@@ -61,7 +60,7 @@ async fn subscribe_returns_400_for_missing_form_data() {
 
     for (invalid_body, error_message) in test_cases {
         let response = client
-            .post(&format!("{}/subscribe", &address))
+            .post(&format!("{}/subscribe", &test_app.address))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(invalid_body)
             .send()
@@ -76,22 +75,33 @@ async fn subscribe_returns_400_for_missing_form_data() {
         )
     }
 }
-async fn spawn_app() -> (String, String) {
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let subscriber = get_subscriber("test".into(), "debug".into());
+    init_subscriber(subscriber);
+});
+
+struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+}
+
+async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
     let mut config = get_configuration().expect("Failed to get configuration");
     config.database.database_name = Uuid::new_v4().to_string();
 
     let pool = configure_database(&config.database).await;
-    let server = run(listener, pool).expect("Failed to bind address");
+    let server = run(listener, pool.clone()).expect("Failed to bind address");
 
     let _server_run = tokio::spawn(server);
     std::mem::drop(_server_run);
 
-    (
-        format!("http://127.0.0.1:{}", port),
-        config.database.connection_string(),
-    )
+    TestApp {
+        address: format!("http://127.0.0.1:{}", port),
+        db_pool: pool,
+    }
 }
 
 async fn configure_database(config: &DatabaseSettings) -> PgPool {
