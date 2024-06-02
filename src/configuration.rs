@@ -1,9 +1,21 @@
 use secrecy::ExposeSecret;
 
 #[derive(serde::Deserialize)]
+pub struct ApplicationSettings {
+    pub host: String,
+    pub port: u16,
+}
+
+impl ApplicationSettings {
+    pub fn address_string(&self) -> String {
+        format!("http://{}:{}", self.host, self.port)
+    }
+}
+
+#[derive(serde::Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
-    pub application_port: u16,
+    pub application: ApplicationSettings,
 }
 
 #[derive(serde::Deserialize)]
