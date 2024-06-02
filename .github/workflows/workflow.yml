@@ -150,10 +150,6 @@ jobs:
         run: SKIP_DOCKER=true ./scripts/init_db.sh
       - name: Generate code coverage
         run: cargo tarpaulin --verbose --workspace
-  image:
-    name: Check Docker Build
-    runs-on: ubuntu-latest
-    steps:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
