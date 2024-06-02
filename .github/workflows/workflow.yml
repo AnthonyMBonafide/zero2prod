@@ -159,4 +159,4 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - name: Build container image
-        run: docker build -t registry.digitalocean.com/mobius/zero2prod:$(echo $GITHUB_SHA | head -c7) .
+        run: docker build -t registry.digitalocean.com/mobius/zero2prod:$(echo $GITHUB_SHA | head -c7) --file Dockerfile .
