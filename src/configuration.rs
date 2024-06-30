@@ -8,7 +8,7 @@ pub struct ApplicationSettings {
 
 impl ApplicationSettings {
     pub fn address_string(&self) -> String {
-        format!("http://{}:{}", self.host, self.port)
+        format!("{}:{}", self.host, self.port)
     }
 }
 
