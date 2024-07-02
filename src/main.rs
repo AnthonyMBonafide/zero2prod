@@ -1,7 +1,6 @@
 use std::net::TcpListener;
 
-use secrecy::ExposeSecret;
-use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use zero2prod::{configuration::get_configuration, get_subscriber, init_subscriber, run};
 
 #[tokio::main]
@@ -10,9 +9,8 @@ async fn main() -> Result<(), std::io::Error> {
     init_subscriber(subscriber);
 
     let config = get_configuration().expect("Failed to get configuration");
-    let connection = PgPool::connect_lazy(config.database.connection_string().expose_secret())
-        .expect("Failed to connect to database");
+    let connection_pool = PgPoolOptions::new().connect_lazy_with(config.database.with_db());
 
     let listener = TcpListener::bind(config.application.address_string())?;
-    run(listener, connection)?.await
+    run(listener, connection_pool)?.await
 }

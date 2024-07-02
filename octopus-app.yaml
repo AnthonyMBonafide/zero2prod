@@ -18,9 +18,21 @@ region: nyc
 services:
 - dockerfile_path: Dockerfile
   envs:
-  - key: DATABASE_URL
+  - key: APP_DATABASE__USERNAME
     scope: RUN_TIME
-    value: ${newsletter.DATABASE_URL}
+    value: ${newsletter.USERNAME}
+  - key: APP_DATABASE__PASSWORD
+    scope: RUN_TIME
+    value: ${newsletter.PASSWORD}
+  - key: APP_DATABASE__HOST
+    scope: RUN_TIME
+    value: ${newsletter.HOSTNAME} 
+  - key: APP_DATABASE__PORT
+    scope: RUN_TIME
+    value: ${newsletter.PORT}
+  - key: APP_DATABASE__NAME
+    scope: RUN_TIME
+    value: ${newsletter.NAME}
   - key: APP_ENVIRONMENT
     scope: RUN_AND_BUILD_TIME
     value: production
