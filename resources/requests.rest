@@ -1,0 +1,19 @@
+# Global Settings
+http://localhost:8080
+
+-i
+--
+# REST Calls for application
+--
+# Get the health of the application
+GET /health_check
+
+--
+# Create a subscription
+Content-Type: application/x-www-form-urlencoded
+
+POST /subscribe
+
+name=anthony&email=AnthonyMBonafide@pm.me
+
+--
