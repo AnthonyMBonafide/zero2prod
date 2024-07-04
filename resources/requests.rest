@@ -1,6 +1,6 @@
 # Global Settings
-http://localhost:8080
-
+# http://localhost:8080
+https://octopus-app-34ny3.ondigitalocean.app
 -i
 --
 # REST Calls for application

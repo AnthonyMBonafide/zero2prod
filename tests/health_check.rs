@@ -47,9 +47,39 @@ async fn subscribe_returns_200_for_valid_form_data() {
     assert_eq!("le guin", r.name);
     assert_eq!("ursula_le_guin@gmail.com", r.email);
 }
+#[tokio::test]
+async fn subscribe_returns_404_for_present_but_empty_data() {
+    let test_app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        (
+            "name=le%20guin&email=definitley-not-an-email",
+            "invalid email",
+        ),
+        ("name=le%20guin&email=", "empty email"),
+        ("name=&email=ursla_le_guin%40gmail.com", "empty name"),
+    ];
+
+    for (invalid_body, error_message) in test_cases {
+        let response = client
+            .post(&format!("{}/subscribe", &test_app.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+
+        assert_eq!(
+            404,
+            response.status().as_u16(),
+            "The API did not fail with a 400 when the payload was {}",
+            error_message
+        )
+    }
+}
 
 #[tokio::test]
-async fn subscribe_returns_400_for_missing_form_data() {
+async fn subscribe_returns_404_for_missing_form_data() {
     let test_app = spawn_app().await;
     let client = reqwest::Client::new();
     let test_cases = vec![
@@ -68,7 +98,7 @@ async fn subscribe_returns_400_for_missing_form_data() {
             .expect("Failed to execute request");
 
         assert_eq!(
-            400,
+            404,
             response.status().as_u16(),
             "The API did not fail with a 400 when the payload was {}",
             error_message
