@@ -2,10 +2,6 @@ use unicode_segmentation::UnicodeSegmentation;
 
 const INVALID_CHARACTERS: [char; 9] = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
 
-pub struct NewSubscriber {
-    pub name: SubscriberName,
-    pub email: String,
-}
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct SubscriberName(String);
 
