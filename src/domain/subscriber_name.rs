@@ -31,6 +31,19 @@ impl SubscriberName {
 #[cfg(test)]
 mod test {
     use super::{SubscriberName, INVALID_CHARACTERS};
+    use proptest::prelude::*;
+
+    proptest! {
+      #[test]
+      fn parse_valid_names(value in r#"[^/()"<>\\{}]{1,256}"#) {
+        prop_assert!(SubscriberName::parse(value).is_ok());
+      }
+
+      #[test]
+      fn reject_long_names(value in r#"[^/()"<>\\{}]{257,}"#) {
+        prop_assert!(SubscriberName::parse(value).is_err());
+      }
+    }
 
     #[test]
     fn a_256_grapheme_long_name_is_valid() {
